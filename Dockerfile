@@ -10,14 +10,13 @@ RUN CGO_ENABLED=0 GOOS=$TARGETOS GOARCH=$TARGETARCH go build -o /app/wasabi_expo
 
 FROM alpine:3.20
 
-RUN apk add --no-cache ca-certificates && \
-    adduser -D -u 65534 exporter
+RUN apk add --no-cache ca-certificates
 
 WORKDIR /home/exporter
 
 COPY --from=builder /app/wasabi_exporter .
 
-USER exporter
+USER nobody
 
 EXPOSE 8080
 
