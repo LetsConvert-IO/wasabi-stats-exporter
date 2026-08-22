@@ -7,14 +7,28 @@ A Helm chart for the [Wasabi Prometheus stats exporter](https://github.com/LetsC
 ```sh
 helm install wasabi-stats-exporter oci://ghcr.io/letsconvert-io/charts/wasabi-stats-exporter \
   --version <version> \
-  --set wasabiApiKeys.existingSecret=wasabi-stats-exporter-keys
+  --set wasabiApiKeys.accounts[0].name=prd \
+  --set wasabiApiKeys.accounts[0].existingSecret=wasabi-secret
 ```
 
-The referenced Secret must contain a key `WASABI_API_KEYS` with a
-comma-separated `account_name=API_KEY` list (see the main repo README for how
-to generate a Wasabi Stats API key). For local testing only, you can instead
-set `wasabiApiKeys.value` directly, which the chart will render into a
-Secret it manages — do not do this for anything that lands in git.
+The preferred way to supply credentials is `wasabiApiKeys.accounts`: a list of
+`{name, existingSecret, accessKeyIdKey, secretAccessKeyKey}` entries, each
+pointing at an *existing* Secret that already holds a normal Wasabi access
+key/secret key pair (e.g. one already used for S3 access — there is no
+separate "Stats API key" concept in Wasabi, see the main repo README for
+details and required permissions). `accessKeyIdKey`/`secretAccessKeyKey`
+default to `AWS_ACCESS_KEY_ID`/`AWS_SECRET_ACCESS_KEY`. The chart composes the
+required `AccessKeyID:SecretAccessKey` value in-container, so the source
+Secret is never duplicated or re-encoded. `name` is only the Prometheus
+`account_name` label used to tell accounts apart in metrics — pick something
+readable (e.g. `prd`), not Wasabi's account ID.
+
+Two fallbacks exist for cases where `accounts` doesn't fit:
+`wasabiApiKeys.existingSecret`/`existingSecretKey` point at a Secret that
+already contains a fully composed, comma-separated
+`account_name=AccessKeyID:SecretAccessKey` list; `wasabiApiKeys.value` sets
+that same string inline for local testing only, which the chart renders into
+a Secret it manages — do not do this for anything that lands in git.
 
 ## Enabling metrics scraping
 

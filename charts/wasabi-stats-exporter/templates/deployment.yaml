@@ -41,6 +41,29 @@ spec:
             - name: metrics
               containerPort: {{ .Values.metrics.port }}
               protocol: TCP
+          {{- if .Values.wasabiApiKeys.accounts }}
+          command: ["/bin/sh", "-c"]
+          args:
+            - |
+              export WASABI_API_KEYS="{{ range $i, $a := .Values.wasabiApiKeys.accounts }}{{ if $i }},{{ end }}{{ $a.name }}=${WASABI_ACCOUNT_{{ $i }}_ACCESS_KEY}:${WASABI_ACCOUNT_{{ $i }}_SECRET_KEY}{{ end }}"
+              exec ./wasabi_exporter
+          env:
+            {{- range $i, $a := .Values.wasabiApiKeys.accounts }}
+            - name: WASABI_ACCOUNT_{{ $i }}_ACCESS_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ $a.existingSecret }}
+                  key: {{ $a.accessKeyIdKey | default "AWS_ACCESS_KEY_ID" }}
+            - name: WASABI_ACCOUNT_{{ $i }}_SECRET_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ $a.existingSecret }}
+                  key: {{ $a.secretAccessKeyKey | default "AWS_SECRET_ACCESS_KEY" }}
+            {{- end }}
+            {{- with .Values.extraEnv }}
+            {{- toYaml . | nindent 12 }}
+            {{- end }}
+          {{- else }}
           env:
             - name: WASABI_API_KEYS
               valueFrom:
@@ -50,6 +73,7 @@ spec:
             {{- with .Values.extraEnv }}
             {{- toYaml . | nindent 12 }}
             {{- end }}
+          {{- end }}
           {{- if .Values.livenessProbe.enabled }}
           livenessProbe:
             {{- omit .Values.livenessProbe "enabled" | toYaml | nindent 12 }}

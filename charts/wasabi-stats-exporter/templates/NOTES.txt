@@ -25,7 +25,7 @@ and set serviceMonitor.labels if your Prometheus Operator selects
 ServiceMonitors by label (e.g. `release: kube-prometheus-stack`).
 {{- end }}
 
-{{- if not .Values.wasabiApiKeys.existingSecret }}
+{{- if and (not .Values.wasabiApiKeys.accounts) (not .Values.wasabiApiKeys.existingSecret) }}
 
 WARNING: wasabiApiKeys.value is being rendered into a Secret managed by this
 release. For anything beyond local testing, create the Secret out-of-band

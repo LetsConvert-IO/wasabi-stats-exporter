@@ -85,7 +85,7 @@ Key within the Secret holding WASABI_API_KEYS
 Fail fast if no Wasabi credential source is configured
 */}}
 {{- define "wasabi-stats-exporter.validateWasabiApiKeys" -}}
-{{- if and (not .Values.wasabiApiKeys.existingSecret) (not .Values.wasabiApiKeys.value) }}
-{{- fail "Set either wasabiApiKeys.existingSecret or wasabiApiKeys.value" }}
+{{- if and (not .Values.wasabiApiKeys.accounts) (not .Values.wasabiApiKeys.existingSecret) (not .Values.wasabiApiKeys.value) }}
+{{- fail "Set one of wasabiApiKeys.accounts, wasabiApiKeys.existingSecret, or wasabiApiKeys.value" }}
 {{- end }}
 {{- end }}

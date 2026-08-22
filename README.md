@@ -50,25 +50,24 @@ http://localhost:8080/metrics
 ```
 
 ## Environment Variables
-- `WASABI_API_KEYS`: A comma-separated list of Wasabi API keys in the format `account_name=API_KEY`.
+- `WASABI_API_KEYS`: A comma-separated list of `account_name=AccessKeyID:SecretAccessKey`
+  pairs. There is no separate "Stats API key" concept in Wasabi — the value after
+  `=` is your normal Wasabi access key ID and secret access key, colon-joined,
+  exactly as required by [Wasabi's Stats API authentication](https://docs.wasabi.com/apidocs/stats-api-get-v1standalone-utilizations)
+  (`Authorization: AccessKeyID:SecretAccessKey`). The same key pair used for S3
+  access works here, as long as it has the required permissions (see below).
 
 ## Setup in Wasabi account
-# Creating the policy and user in every individual Wasabi account
 
-Create the policy (if it doesn't exist)
-```
-{
-  "Version": "2012-10-17",
-  "Statement": [
-    {
-      "Effect": "Allow",
-      "Action": "aws-portal:ViewBilling",
-      "Resource": "*"
-    }
-  ]
-}
-``` 
-Create the user (Programmatic (create API keys)) and add the key to the `WASABI_API_KEYS`
+No special "API key" needs to be generated — reuse (or create) a normal Wasabi
+access key from **Wasabi Console → Access Keys → Create Access Key**, either a
+Root account key or a sub-user key. If using a sub-user, attach the
+`WasabiAccountStatsAccess` and/or `WasabiBucketStatsAccess` policies (Wasabi's
+own policy names — there is no AWS-style IAM JSON policy to write, that only
+applies to real AWS accounts). See
+[Generating a Wasabi Stats API Key](https://docs.wasabi.com/apidocs/generating-a-wasabi-stats-api-key)
+for the console walkthrough. Then set `WASABI_API_KEYS` to
+`account_name=<AccessKeyID>:<SecretAccessKey>`.
 
 ## Container image
 
@@ -86,10 +85,14 @@ published as an OCI artifact on every `vX.Y.Z` tag push:
 ```sh
 helm install wasabi-stats-exporter oci://ghcr.io/letsconvert-io/charts/wasabi-stats-exporter \
   --version <version> \
-  --set wasabiApiKeys.existingSecret=<secret-name>
+  --set wasabiApiKeys.accounts[0].name=<label> \
+  --set wasabiApiKeys.accounts[0].existingSecret=<secret-name>
 ```
 
-See the [chart README](./charts/wasabi-stats-exporter/README.md) for the full
+`wasabiApiKeys.accounts` points the chart at an *existing* Secret that already
+holds a normal Wasabi access key/secret key pair (e.g. one you already use for
+S3 access) — no new secret needs to be created just for this exporter. See the
+[chart README](./charts/wasabi-stats-exporter/README.md) for the full
 configuration reference, including the `serviceMonitor.enabled` toggle for
 Prometheus Operator scraping.
 

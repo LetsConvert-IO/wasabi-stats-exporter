@@ -93,20 +93,33 @@ readinessProbe:
   timeoutSeconds: 5
   failureThreshold: 3
 
-# Wasabi Stats API credentials, consumed as WASABI_API_KEYS
-# (comma-separated account=API_KEY pairs). This is the Wasabi Stats API key,
-# NOT an AWS-style access/secret key pair -- do not point existingSecret at
-# an S3-credential secret, the key names/shape are incompatible.
+# Wasabi Stats API credentials. There is no separate "Stats API key" concept
+# in Wasabi -- authentication is the same access key/secret key pair used for
+# S3 access (Root, or a sub-user with the WasabiAccountStatsAccess /
+# WasabiBucketStatsAccess policies), colon-joined into AccessKeyID:SecretAccessKey
+# per Wasabi's Stats API auth format.
 wasabiApiKeys:
-  # -- Name of a pre-existing Secret to source WASABI_API_KEYS from. When set,
-  # this chart does not create a Secret and `value` below is ignored -- use
-  # this in production (e.g. a secret created out-of-band via Flux/SOPS).
+  # -- Preferred: list of Wasabi accounts to poll, each sourcing its access/secret
+  # key pair from an existing Secret -- e.g. one already used for S3 access, no
+  # need to create a separate credential. The chart composes the required
+  # AccessKeyID:SecretAccessKey value in-container. `name` is only the
+  # Prometheus account_name label used to tell accounts apart in metrics --
+  # pick something readable (e.g. "prd"), not Wasabi's account ID.
+  accounts: []
+  # accounts:
+  #   - name: letsconvert
+  #     existingSecret: wasabi-secret
+  #     accessKeyIdKey: AWS_ACCESS_KEY_ID       # defaults shown
+  #     secretAccessKeyKey: AWS_SECRET_ACCESS_KEY
+
+  # -- Fallback: name of a pre-existing Secret that already contains a fully
+  # composed WASABI_API_KEYS value (comma-separated
+  # account_name=AccessKeyID:SecretAccessKey pairs). Ignored when `accounts` is set.
   existingSecret: ""
   existingSecretKey: "WASABI_API_KEYS"
-  # -- Inline comma-separated account=API_KEY pairs, only used when
-  # existingSecret is empty. Rendered into a Secret this chart manages.
-  # Avoid setting this directly in a HelmRelease `values:` block in git --
-  # prefer existingSecret for anything beyond local testing.
+  # -- Fallback: inline fully composed value, only used when both `accounts`
+  # and `existingSecret` are empty. Rendered into a Secret this chart manages.
+  # Avoid setting this directly in a HelmRelease `values:` block in git.
   value: ""
 
 extraEnv: []
