@@ -1,0 +1,9 @@
+.git/
+.gitignore
+.vscode/
+*.tmp
+*.bak
+*.swp
+*.orig
+.DS_Store
+ci/

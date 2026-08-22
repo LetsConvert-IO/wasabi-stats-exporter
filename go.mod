@@ -1,4 +1,4 @@
-module main.go
+module github.com/letsconvert-io/wasabi-stats-exporter
 
 go 1.22.2
 

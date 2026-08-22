@@ -1,5 +1,7 @@
 # Wasabi Prometheus Exporter
 
+> Forked from [mipapo/wasabi-stats-exporter](https://github.com/mipapo/wasabi-stats-exporter) (MIT licensed) and maintained here with a Docker/Helm release pipeline.
+
 This project is a Prometheus exporter for Wasabi bucket statistics. It fetches bucket utilization data from the Wasabi API and exposes it as Prometheus metrics.
 
 ## Features
@@ -68,6 +70,37 @@ Create the policy (if it doesn't exist)
 ``` 
 Create the user (Programmatic (create API keys)) and add the key to the `WASABI_API_KEYS`
 
+## Container image
+
+Published to GHCR on every `vX.Y.Z` tag push:
+
+```
+ghcr.io/letsconvert-io/wasabi-stats-exporter:<version>
+```
+
+## Helm chart
+
+A production-ready Helm chart lives in [`charts/wasabi-stats-exporter`](./charts/wasabi-stats-exporter),
+published as an OCI artifact on every `vX.Y.Z` tag push:
+
+```sh
+helm install wasabi-stats-exporter oci://ghcr.io/letsconvert-io/charts/wasabi-stats-exporter \
+  --version <version> \
+  --set wasabiApiKeys.existingSecret=<secret-name>
+```
+
+See the [chart README](./charts/wasabi-stats-exporter/README.md) for the full
+configuration reference, including the `serviceMonitor.enabled` toggle for
+Prometheus Operator scraping.
+
+## Known limitations
+
+- No HTTP health/readiness endpoint — the Helm chart's liveness/readiness
+  probes use a TCP socket check against the metrics port as a safe default.
+- Minimal error handling if a Wasabi Stats API call fails (logged, not
+  retried) — the background poller just tries again on its next hourly tick.
+
 ## License
-This project is licensed under the MIT License.
+This project is licensed under the MIT License. See [LICENSE](./LICENSE).
+Originally authored by [Michael Pohl](https://github.com/mipapo).
 

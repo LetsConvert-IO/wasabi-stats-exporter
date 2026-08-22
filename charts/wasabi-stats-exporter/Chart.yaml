@@ -1,0 +1,18 @@
+apiVersion: v2
+name: wasabi-stats-exporter
+description: Prometheus exporter for Wasabi cloud storage account-level usage statistics
+type: application
+version: 0.1.0
+appVersion: "0.1.0"
+home: https://github.com/LetsConvert-IO/wasabi-stats-exporter
+sources:
+  - https://github.com/LetsConvert-IO/wasabi-stats-exporter
+maintainers:
+  - name: LetsConvert-IO
+    url: https://github.com/LetsConvert-IO
+keywords:
+  - wasabi
+  - prometheus
+  - exporter
+  - monitoring
+  - s3

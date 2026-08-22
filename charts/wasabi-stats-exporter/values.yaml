@@ -1,0 +1,139 @@
+# -- Number of replicas. The exporter polls Wasabi hourly and holds no state,
+# so 1 is typical; running >1 just means duplicate scrapes/API calls.
+replicaCount: 1
+
+image:
+  registry: ghcr.io
+  repository: letsconvert-io/wasabi-stats-exporter
+  # -- Defaults to .Chart.AppVersion when empty
+  tag: ""
+  pullPolicy: IfNotPresent
+
+imagePullSecrets: []
+nameOverride: ""
+fullnameOverride: ""
+
+serviceAccount:
+  # -- Specifies whether a service account should be created
+  create: true
+  annotations: {}
+  name: ""
+
+podAnnotations: {}
+podLabels: {}
+
+podSecurityContext:
+  runAsNonRoot: true
+  runAsUser: 65534
+  fsGroup: 65534
+  seccompProfile:
+    type: RuntimeDefault
+
+securityContext:
+  allowPrivilegeEscalation: false
+  readOnlyRootFilesystem: true
+  runAsNonRoot: true
+  runAsUser: 65534
+  capabilities:
+    drop: ["ALL"]
+
+# -- Standard expose toggle: creates a ClusterIP (or other) Service fronting the metrics port
+service:
+  enabled: true
+  type: ClusterIP
+  port: 8080
+  annotations: {}
+
+ingress:
+  enabled: false
+  className: ""
+  annotations: {}
+  hosts:
+    - host: wasabi-stats-exporter.example.com
+      paths:
+        - path: /
+          pathType: ImplementationSpecific
+  tls: []
+
+resources:
+  requests:
+    cpu: 50m
+    memory: 32Mi
+  limits:
+    memory: 64Mi
+
+autoscaling:
+  enabled: false
+  minReplicas: 1
+  maxReplicas: 3
+  targetCPUUtilizationPercentage: 80
+  targetMemoryUtilizationPercentage: null
+
+nodeSelector: {}
+tolerations: []
+affinity: {}
+
+# The exporter has no HTTP health route today, so probes default to a TCP
+# socket check against the metrics port rather than an HTTP GET.
+livenessProbe:
+  enabled: true
+  tcpSocket:
+    port: metrics
+  initialDelaySeconds: 10
+  periodSeconds: 30
+  timeoutSeconds: 5
+  failureThreshold: 3
+
+readinessProbe:
+  enabled: true
+  tcpSocket:
+    port: metrics
+  initialDelaySeconds: 5
+  periodSeconds: 15
+  timeoutSeconds: 5
+  failureThreshold: 3
+
+# Wasabi Stats API credentials, consumed as WASABI_API_KEYS
+# (comma-separated account=API_KEY pairs). This is the Wasabi Stats API key,
+# NOT an AWS-style access/secret key pair -- do not point existingSecret at
+# an S3-credential secret, the key names/shape are incompatible.
+wasabiApiKeys:
+  # -- Name of a pre-existing Secret to source WASABI_API_KEYS from. When set,
+  # this chart does not create a Secret and `value` below is ignored -- use
+  # this in production (e.g. a secret created out-of-band via Flux/SOPS).
+  existingSecret: ""
+  existingSecretKey: "WASABI_API_KEYS"
+  # -- Inline comma-separated account=API_KEY pairs, only used when
+  # existingSecret is empty. Rendered into a Secret this chart manages.
+  # Avoid setting this directly in a HelmRelease `values:` block in git --
+  # prefer existingSecret for anything beyond local testing.
+  value: ""
+
+extraEnv: []
+# extraEnv:
+#   - name: LOG_LEVEL
+#     value: "info"
+
+metrics:
+  port: 8080
+  path: /metrics
+
+# ServiceMonitor for Prometheus Operator scraping. Disabled by default --
+# enable explicitly once the exporter is deployed into a namespace your
+# kube-prometheus-stack is watching.
+serviceMonitor:
+  enabled: false
+  # -- Defaults to the release namespace when empty
+  namespace: ""
+  interval: 1m
+  scrapeTimeout: ""
+  # -- Defaults to metrics.path when empty
+  path: ""
+  # -- Extra labels on the ServiceMonitor object itself. If your
+  # kube-prometheus-stack's serviceMonitorSelector matches on labels (rather
+  # than, or in addition to, namespace selection), set the label it expects
+  # here, e.g. `release: kube-prometheus-stack`.
+  labels: {}
+  annotations: {}
+  metricRelabelings: []
+  relabelings: []
